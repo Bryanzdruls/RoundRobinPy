@@ -6,6 +6,9 @@ class Proceso:
         self.tiempoLlegadaMS = tiempoLlegadaMS
         self.tiempoProcesador = tiempoProcesador
         self.colaEntradasSalidas = colaEntradasSalidas
+        
+        self.tiempoReingreso = 0
+        self.tiempoTerminado =0
 
 class EntradasSalidas: 
     def __init__(self):

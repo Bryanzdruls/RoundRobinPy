@@ -3,28 +3,43 @@ from queue import Queue
 import sys
 import Proceso
 
+
+def validarInput(validar):
+    try:
+        int(validar)
+        return True
+    except:
+        return False
+
+        
 def RoundRobin(qp):    
+    listProcesosTerminados = []
     tiempoAnterior =0
     tiempoActual = 0
     intercambio = 1
+    quantum = 3
     qpOrdenada = ordenarCola(qp)
 
     qpRoundRobin = Queue(cantidadProcesos)
-      
-    print("DIAGRAMA DE GANTT\n")
+    with open('archivo.txt', 'w') as archivo:
+        archivo.write("DIAGRAMA DE GANTT")
+    print("COLA DE LISTOS\n")
     while not qpRoundRobin.empty() or tiempoActual==0:
         if tiempoActual == 0: #Esto se realiza para que obtenga de la cola de procesos a la cola de listos la primera vez
             qpRoundRobin.put(qpOrdenada.get())  
         proceso = qpRoundRobin.get() #Se extrae el proceso a trabajar de la cola de listos
-        
+        print("Proceso numero: "+ str(proceso.idProceso) +" "+str(proceso.tiempoProcesador))
         tiempoAnterior = tiempoActual #Se actualiza el tiempo anterior
-        tiempoActual = tiempoActual + (1*3 + intercambio ) #El 1*50 representa un quantum mulplicado por sus milisegundos respectivos
+        tiempoActual = tiempoActual + (1*quantum+ intercambio ) #El 1*50 representa un quantum mulplicado por sus milisegundos respectivos
         
         #Llamar metodo para escribir cola de listos en un txt
 
-        proceso.tiempoProcesador = proceso.tiempoProcesador -1 #Se le resta el quantum trabajado al proceso
+        proceso.tiempoProcesador = proceso.tiempoProcesador - 1 #Se le resta el quantum trabajado al proceso
 
-        if not qpOrdenada.empty():  #Se revisa si hay mas procesos por entrar en la cola de procesos
+
+        lenQpOrdenada= qpOrdenada.qsize()
+        i=0
+        while not qpOrdenada.empty() and i<= lenQpOrdenada:  #Se revisa si hay mas procesos por entrar en la cola de procesos
             pEvaluar = qpOrdenada.get() #Se extrae el siguiente proceso en orden cronologico de la lista de procesos
             #Validar si entra proceso luego de trabajar con uno
             if(tiempoActual >= pEvaluar.tiempoLlegadaMS ): #and tiempoAnterior <= pEvaluar.tiempoLlegadaMS 
@@ -32,18 +47,22 @@ def RoundRobin(qp):
             else:
                  qpOrdenada.put(pEvaluar)   #el proceso aun no ha llegado por lo cual se devuelve a la espera
                  qpOrdenada = ordenarCola(qpOrdenada)   #se ordena la cola en orden de llegada
+                 i = i+1      
         
         if (proceso.tiempoProcesador != 0): #se verifica si el proceso ya termino
             qpRoundRobin.put(proceso)   #si el proceso no ha terminado se vuelve a añadir a la cola de listos
             
                 
-        if(proceso.tiempoProcesador == 0):     
+        if(proceso.tiempoProcesador == 0):             
+            proceso.tiempoTerminado = tiempoActual-intercambio 
+            listProcesosTerminados.append(proceso)
             if not proceso.colaEntradasSalidas.empty():
                 entradaSalida =proceso.colaEntradasSalidas.get()
-                tiempoDespertar = tiempoActual + entradaSalida.tiempoDormida*3
+                tiempoDespertar = tiempoActual + entradaSalida.tiempoDormida*quantum
                 
                 proceso.tiempoLlegadaMS = tiempoDespertar
                 proceso.tiempoProcesador = entradaSalida.tiempoProcesador
+                proceso.tiempoReingreso=tiempoDespertar
 
                 qpOrdenada.put(proceso)
                 qpOrdenada = ordenarCola(qpOrdenada)
@@ -52,12 +71,17 @@ def RoundRobin(qp):
             tiempoActual = tiempoActual-intercambio
             intercambio = 0
         
-        print("Proceso numero: "+ str(proceso.idProceso) +" "+str(tiempoActual- intercambio)+ " " +str(1))
-        
-        if not(qpOrdenada.empty() and qpRoundRobin.empty()):
-            print("Intercambio: "+ str(1/intercambio))
-    print("El algoritmo termina en el milisegundo: "+ str(tiempoActual))
-
+        #print("Proceso numero: "+ str(proceso.idProceso) +" "+str(tiempoActual- intercambio)+ " " +str(1))
+        with open('archivo.txt', 'a') as archivo:
+            archivo.write("\n________"+str(tiempoAnterior))
+            archivo.write("\n   "+str(1)+"|P"+ str(proceso.idProceso) +"|")
+            archivo.write("\n________"+str(tiempoActual- intercambio))
+            if not(qpOrdenada.empty() and qpRoundRobin.empty()):
+                archivo.write("\n"+str(round((intercambio/quantum),2))+"|I |")
+        #if not(qpOrdenada.empty() and qpRoundRobin.empty()):
+            #print("Intercambio: "+ str(1/intercambio))
+    #print("El algoritmo termina en el milisegundo: "+ str(tiempoActual))
+    print("Cola de listos vacia")
 def ordenarCola(qp):
     listCola = list(qp.queue)
     listaOrdenada = sorted(listCola, key=attrgetter('tiempoLlegadaMS'))
@@ -66,43 +90,63 @@ def ordenarCola(qp):
         qpOrdenada.put(proceso)
     return qpOrdenada
 
-print("Ingrese la cantidad de procesos")
-cantidadProcesos = int(input())
+cantidadProcesos=0
+while (cantidadProcesos<=0):
+    print("Ingrese la cantidad de procesos")
+    validar =input()
+    if validarInput(validar):
+        cantidadProcesos = int(validar)
 
-if (cantidadProcesos<=0):
-    print("Programa finalizado")
-    sys.exit()
-else:
-    qp = Queue(cantidadProcesos)
-    for i in range(cantidadProcesos):
 
+qp = Queue(cantidadProcesos)
+for i in range(cantidadProcesos):
+    tiempoLlegadaMS=-1
+    while (tiempoLlegadaMS<=-1):
         print("Ingrese un tiempo de llegada para el proceso {} en MS ".format(i))
-        tiempoLlegadaMS = int(input())
+        validar = input()
+        if validarInput(validar):
+            tiempoLlegadaMS = int(validar)
+    tiempoQ =-1
+    while(tiempoQ <=0):
         print("Ingrese el tiempo que requiere en quantums el proceso",i)
-        tiempoQ = int(input())
+        validar = input()
+        if validarInput(validar):
+            tiempoQ = int(validar)
+        
+    entradaSalidaCant = -1
+    while( entradaSalidaCant<=-1 ):
         print("cuantas entradas/salidas tiene el proceso ",i)
-        entradaSalidaCant = int(input())
-        if(entradaSalidaCant <=0 ):
-            entradaSalidaCant = 0
-   
-        colaEntradasSalidas = Queue()        
-        for j in range( entradaSalidaCant):
-            entradaSalida = Proceso.EntradasSalidas()
-            if(entradaSalidaCant > 0):
-                print("Cuanto va a dormir el proceso ",i," en QUANTUM entrada y salida # ",j)
-                dormidaPorProceso = int(input())
-                print("Cuantos quantum va a requerir la entrada y salida del proceso", i)
-                quantumEntradaSalida = int(input())
-                          
-                entradaSalida.idEntradaSalida = j                          
-                entradaSalida.tiempoDormida = dormidaPorProceso
-                entradaSalida.tiempoProcesador = quantumEntradaSalida
+        validar = input()
+        if validarInput(validar):
+            entradaSalidaCant = int(validar)
 
-                colaEntradasSalidas.put(entradaSalida)
-        proceso = Proceso.Proceso(i, tiempoLlegadaMS, tiempoQ, colaEntradasSalidas)
-        qp.put(proceso)
+    colaEntradasSalidas = Queue()        
+    for j in range( entradaSalidaCant):
+        entradaSalida = Proceso.EntradasSalidas()
+        if(entradaSalidaCant > 0):
+            dormidaPorProceso = 0
+            while(dormidaPorProceso<=0):
+                print("Cuanto va a dormir el proceso ",i," en QUANTUM entrada y salida #",j)
+                validar = input()
+                if validarInput(validar):
+                    dormidaPorProceso = int(validar)
 
-    RoundRobin(qp)
+            quantumEntradaSalida = 0
+            while(quantumEntradaSalida <=0):
+                print("Cuantos quantum va a requerir la entrada y salida #", j)
+                validar = input()
+                if validarInput(validar):
+                    quantumEntradaSalida = int(validar)
+                        
+            entradaSalida.idEntradaSalida = j                          
+            entradaSalida.tiempoDormida = dormidaPorProceso
+            entradaSalida.tiempoProcesador = quantumEntradaSalida
+
+            colaEntradasSalidas.put(entradaSalida)
+    proceso = Proceso.Proceso(i, tiempoLlegadaMS, tiempoQ, colaEntradasSalidas)
+    qp.put(proceso)
+
+RoundRobin(qp)
 
 
 
