@@ -16,24 +16,34 @@ def RoundRobin(qp):
     listProcesosTerminados = []
     tiempoAnterior =0
     tiempoActual = 0
-    intercambio = 1
-    quantum = 3
+    intercambio = 10
+    quantum = 50
     qpOrdenada = ordenarCola(qp)
+    
+    tiempoVuelta= 0
+    promedioVuelta = 0
+    promedioEspera = 0
 
     qpRoundRobin = Queue(cantidadProcesos)
     with open('archivo.txt', 'w') as archivo:
         archivo.write("DIAGRAMA DE GANTT")
+    with open('colaListos.txt', 'w') as archivo:
+        archivo.write("COLA DE LISTOS")
     print("COLA DE LISTOS\n")
     while not qpRoundRobin.empty() or tiempoActual==0:
         if tiempoActual == 0: #Esto se realiza para que obtenga de la cola de procesos a la cola de listos la primera vez
             qpRoundRobin.put(qpOrdenada.get())  
         proceso = qpRoundRobin.get() #Se extrae el proceso a trabajar de la cola de listos
-        print("Proceso numero: "+ str(proceso.idProceso) +" "+str(proceso.tiempoProcesador))
+        
+        if not proceso.asignadoTiempoIngresoPrograma:
+            proceso.tiempoIngresoPrograma = tiempoActual
+            proceso.asignadoTiempoIngresoPrograma = True
+
+        with open('colaListos.txt', 'a') as archivo:
+                archivo.write("\nProceso numero: "+ str(proceso.idProceso) +" "+str(proceso.tiempoProcesador))
         tiempoAnterior = tiempoActual #Se actualiza el tiempo anterior
         tiempoActual = tiempoActual + (1*quantum+ intercambio ) #El 1*50 representa un quantum mulplicado por sus milisegundos respectivos
         
-        #Llamar metodo para escribir cola de listos en un txt
-
         proceso.tiempoProcesador = proceso.tiempoProcesador - 1 #Se le resta el quantum trabajado al proceso
 
 
@@ -55,6 +65,15 @@ def RoundRobin(qp):
                 
         if(proceso.tiempoProcesador == 0):             
             proceso.tiempoTerminado = tiempoActual-intercambio 
+            if (proceso.sumaEntradasSalida ==0):
+                lenColaEs= proceso.colaEntradasSalidas.qsize()
+                j=0
+                while  j< lenColaEs:
+                    procesoARevisarESQuantum = proceso.colaEntradasSalidas.get()
+                    proceso.sumaEntradasSalida = proceso.sumaEntradasSalida  + procesoARevisarESQuantum.tiempoProcesador *quantum
+                    proceso.colaEntradasSalidas.put(procesoARevisarESQuantum)
+                    proceso.colaEntradasSalidas=ordenarCola(proceso.colaEntradasSalidas)
+                    j = j+1
             listProcesosTerminados.append(proceso)
             if not proceso.colaEntradasSalidas.empty():
                 entradaSalida =proceso.colaEntradasSalidas.get()
@@ -62,14 +81,23 @@ def RoundRobin(qp):
                 
                 proceso.tiempoLlegadaMS = tiempoDespertar
                 proceso.tiempoProcesador = entradaSalida.tiempoProcesador
-                proceso.tiempoReingreso=tiempoDespertar
 
                 qpOrdenada.put(proceso)
                 qpOrdenada = ordenarCola(qpOrdenada)
-
+            else:
+                print("---------TIEMPOS PROCESO "+str(proceso.idProceso)+"---------\n")
+                tiempoEspera = proceso.tiempoIngresoPrograma - proceso.tiempoLlegadaOriginal
+                tiempoVuelta = proceso.tiempoTerminado - proceso.sumaEntradasSalida- proceso.tiempoLlegadaOriginal
+                print("tiempo vuelta p:",str(proceso.idProceso),": ",str(tiempoVuelta))
+                print("tiempo espera p:",str(proceso.idProceso),": ",str(tiempoEspera))
+                promedioVuelta = promedioVuelta + tiempoVuelta
+                promedioEspera = promedioEspera + tiempoEspera
         if(qpOrdenada.empty() and qpRoundRobin.empty()):    #Se evalua si ya todo el procedimiento termino para no poner intercambio
             tiempoActual = tiempoActual-intercambio
             intercambio = 0
+            print("---------TIEMPOS PROMEDIOS ---------\n")
+            print("promedio de vuelta es: "+ str(promedioVuelta/cantidadProcesos))
+            print("promedio de espera es: "+ str(promedioEspera/cantidadProcesos))
         
         #print("Proceso numero: "+ str(proceso.idProceso) +" "+str(tiempoActual- intercambio)+ " " +str(1))
         with open('archivo.txt', 'a') as archivo:

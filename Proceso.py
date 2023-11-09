@@ -7,8 +7,11 @@ class Proceso:
         self.tiempoProcesador = tiempoProcesador
         self.colaEntradasSalidas = colaEntradasSalidas
         
-        self.tiempoReingreso = 0
+        self.tiempoLlegadaOriginal = tiempoLlegadaMS
+        self.tiempoIngresoPrograma = 0
+        self.asignadoTiempoIngresoPrograma = False
         self.tiempoTerminado =0
+        self.sumaEntradasSalida =0
 
 class EntradasSalidas: 
     def __init__(self):
