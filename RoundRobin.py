@@ -15,8 +15,8 @@ def RoundRobin(qp):
     #listProcesosTerminados = []
     tiempoAnterior =0
     tiempoActual = 0
-    intercambio = 20
-    quantum = 100
+    intercambio = 10
+    quantum = 50
     qpOrdenada = ordenarCola(qp)
     
     tiempoVuelta= 0
@@ -24,10 +24,12 @@ def RoundRobin(qp):
     promedioEspera = 0
 
     qpRoundRobin = Queue(cantidadProcesos)
-    with open('archivo.txt', 'w') as archivo:
+    with open('diagramaGantt.txt', 'w') as archivo:
         archivo.write("DIAGRAMA DE GANTT")
     with open('colaListos.txt', 'w') as archivo:
         archivo.write("COLA DE LISTOS")
+    with open('tiemposPromedio.txt', 'w') as archivo:
+        archivo.write("DIAGRAMA DE GANTT")
     while not qpRoundRobin.empty() or tiempoActual==0:
         if tiempoActual == 0: #Esto se realiza para que obtenga de la cola de procesos a la cola de listos la primera vez
             qpRoundRobin.put(qpOrdenada.get())  
@@ -93,12 +95,14 @@ def RoundRobin(qp):
         if(qpOrdenada.empty() and qpRoundRobin.empty()):    #Se evalua si ya todo el procedimiento termino para no poner intercambio
             tiempoActual = tiempoActual-intercambio
             intercambio = 0
-            print("---------TIEMPOS PROMEDIOS ---------\n")
-            print("promedio de vuelta es: "+ str(promedioVuelta/cantidadProcesos))
-            print("promedio de espera es: "+ str(promedioEspera/cantidadProcesos))
-        
+            #print("---------TIEMPOS PROMEDIOS ---------\n")
+            #print("promedio de vuelta es: "+ str(promedioVuelta/cantidadProcesos))
+            #print("promedio de espera es: "+ str(promedioEspera/cantidadProcesos))
+            with open('tiemposPromedio.txt', 'a') as archivo:
+                archivo.write("\npromedio de vuelta es: "+ str(promedioVuelta/cantidadProcesos))
+                archivo.write("\npromedio de espera es: "+ str(promedioEspera/cantidadProcesos))
         #print("Proceso numero: "+ str(proceso.idProceso) +" "+str(tiempoActual- intercambio)+ " " +str(1))
-        with open('archivo.txt', 'a') as archivo:
+        with open('diagramaGantt.txt', 'a') as archivo:
             archivo.write("\n     ___"+str(tiempoAnterior))
             archivo.write("\n   "+str(1)+"|P"+ str(proceso.idProceso) +"|")
             archivo.write("\n     ___"+str(tiempoActual- intercambio))
@@ -107,7 +111,10 @@ def RoundRobin(qp):
         #if not(qpOrdenada.empty() and qpRoundRobin.empty()):
             #print("Intercambio: "+ str(1/intercambio))
     #print("El algoritmo termina en el milisegundo: "+ str(tiempoActual))
-    print("Cola de listos vacia")
+
+    print("Diagrama de gantt en diagramaGantt.txt")
+    print("Cola de listos en colaListos.txt")
+    print("tiempos Promedio en tiemposPromedio.txt")
 def ordenarCola(qp):
     listCola = list(qp.queue)
     listaOrdenada = sorted(listCola, key=attrgetter('tiempoLlegadaMS'))
