@@ -15,8 +15,8 @@ def RoundRobin(qp):
     #listProcesosTerminados = []
     tiempoAnterior =0
     tiempoActual = 0
-    intercambio = 10
-    quantum = 50
+    intercambio = 20
+    quantum = 200
     qpOrdenada = ordenarCola(qp)
     
     tiempoVuelta= 0
@@ -70,7 +70,7 @@ def RoundRobin(qp):
                 j=0
                 while  j< lenColaEs: #se empieza a revisar cada entrada y salida de l a cola para asi poder acceder a los cuantum que necesita y poder cumplir con el proceso
                     procesoARevisarESQuantum = proceso.colaEntradasSalidas.get()
-                    proceso.sumaEntradasSalida = proceso.sumaEntradasSalida  + procesoARevisarESQuantum.tiempoProcesador *quantum #del proceso a revisar se multiplica el tiempo que requiere en procesador por el quantum
+                    proceso.sumaEntradasSalida = proceso.sumaEntradasSalida  + procesoARevisarESQuantum.tiempoDormida *quantum #del proceso a revisar se multiplica el tiempo que requiere en procesador por el quantum
                     proceso.colaEntradasSalidas.put(procesoARevisarESQuantum) #la suma respectiva se almacena
                     proceso.colaEntradasSalidas=ordenarCola(proceso.colaEntradasSalidas) #se ordena
                     j = j+1
